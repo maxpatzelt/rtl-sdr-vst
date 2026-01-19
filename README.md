@@ -2,6 +2,8 @@
 
 A VST3 plugin that bridges RTL-SDR USB radio dongles to Ableton Live, allowing you to use radio frequencies as audio sources for music production, live performance, and sound design.
 
+![RTL-SDR Radio Plugin UI](screenshots/plugin-ui.png)
+
 ## 🎯 Features
 
 - **Real-time RF to Audio**: Stream radio signals directly into Ableton Live
