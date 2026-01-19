@@ -1,0 +1,68 @@
+MIT License
+
+Copyright (c) 2026 RTL-SDR VST Plugin Contributors
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+---
+
+## Third-Party Licenses
+
+This software uses the following third-party libraries:
+
+### JUCE Framework
+- License: GPL v3 or Commercial License
+- Website: https://juce.com/
+- SPDX-License-Identifier: GPL-3.0-or-later
+- Note: If you distribute a commercial product using this code, you must either:
+  1. Comply with GPL v3 (make your source available), or
+  2. Obtain a commercial JUCE license
+
+### librtlsdr
+- License: GNU General Public License v2.0
+- Repository: https://github.com/osmocom/rtl-sdr
+- SPDX-License-Identifier: GPL-2.0-only
+- Note: This is a runtime dependency; linking may require GPL compliance
+
+---
+
+## License Compatibility Notes
+
+**If you plan to distribute this plugin commercially:**
+
+1. **JUCE**: Requires a commercial license OR GPL v3 compliance
+   - Purchase from: https://juce.com/juce-7-licence/
+
+2. **librtlsdr**: GPL v2
+   - Dynamic linking may allow MIT/proprietary use (consult legal)
+   - Static linking requires GPL compliance
+
+3. **Recommended approach for commercial use**:
+   - Get commercial JUCE license
+   - Dynamically link to librtlsdr
+   - Consult with legal counsel for GPL compatibility
+
+**For open-source/personal use:**
+- This project's MIT license allows free use
+- Ensure JUCE GPL v3 requirements are met (share source if distributing)
+- Comply with librtlsdr GPL v2 (share source if distributing)
+
+---
+
+**Disclaimer**: This is not legal advice. Consult with a qualified attorney for licensing questions.
