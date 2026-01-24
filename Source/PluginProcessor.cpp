@@ -148,6 +148,7 @@ void RTLSDRPluginProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce:
     }
 
     currentVolume.store(volumeParam->get());
+    currentMode.store(modeParam->getIndex());
 
     // Process SDR samples
     int samplesNeeded = buffer.getNumSamples();
@@ -162,9 +163,18 @@ void RTLSDRPluginProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce:
         tempIQBuffer.resize(toRead);
         iqBuffer.read(tempIQBuffer.data(), toRead);
 
-        // Demodulate
+        // Demodulate based on mode
         tempAudioBuffer.clear();
-        fmDemod.processIQ(tempIQBuffer.data(), (int)toRead, tempAudioBuffer);
+        int mode = currentMode.load();
+        
+        if (mode == 2)  // AM mode
+        {
+            amDemod.processBlock(tempIQBuffer.data(), (int)toRead, tempAudioBuffer);
+        }
+        else  // FM modes (0 = Wideband, 1 = Narrowband)
+        {
+            fmDemod.processIQ(tempIQBuffer.data(), (int)toRead, tempAudioBuffer);
+        }
 
         // Resample to host rate
         std::vector<float> resampledAudio;

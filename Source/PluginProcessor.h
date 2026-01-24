@@ -11,6 +11,7 @@
 #include <juce_audio_processors/juce_audio_processors.h>
 #include "RTLSDRDevice.h"
 #include "FMDemodulator.h"
+#include "AMDemodulator.h"
 #include "AudioResampler.h"
 #include "RingBuffer.h"
 
@@ -66,6 +67,7 @@ private:
     // SDR components
     RTLSDRDevice sdrDevice;
     FMDemodulator fmDemod;
+    AMDemodulator amDemod;
     AudioResampler resampler;
     RingBuffer<uint8_t> iqBuffer;    // IQ samples from SDR
     RingBuffer<float> audioBuffer;    // Demodulated audio
@@ -74,6 +76,7 @@ private:
     std::atomic<float> currentFrequency{100.0f}; // MHz
     std::atomic<float> currentGain{29.0f};       // dB
     std::atomic<float> currentVolume{0.7f};
+    std::atomic<int> currentMode{0};             // 0=FM WB, 1=FM NB, 2=AM
 
     // Audio state
     double hostSampleRate = 48000.0;

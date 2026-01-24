@@ -58,6 +58,7 @@ target_sources(RTLSDRPlugin
         Source/PluginEditor.cpp
         Source/RTLSDRDevice.cpp
         Source/FMDemodulator.cpp
+        Source/AMDemodulator.cpp
         Source/AudioResampler.cpp
         Source/RingBuffer.cpp
         Source/SpectrumAnalyzer.cpp
