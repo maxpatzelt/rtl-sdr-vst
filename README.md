@@ -1,26 +1,42 @@
 # RTL-SDR VST3 Plugin for Ableton Live
 
-A VST3 plugin that bridges RTL-SDR USB radio dongles to Ableton Live, allowing you to use radio frequencies as audio sources for music production, live performance, and sound design.
+A professional-grade VST3 plugin that bridges RTL-SDR USB radio dongles to Ableton Live, featuring real-time spectrum visualization, waterfall display, and comprehensive preset management for radio frequencies.
 
 ![RTL-SDR Radio Plugin UI](screenshots/plugin-ui.png)
 
 ## 🎯 Features
 
+### Core SDR Features
 - **Real-time RF to Audio**: Stream radio signals directly into Ableton Live
 - **Wideband FM Demodulation**: High-quality FM demodulation with de-emphasis filtering
 - **Frequency Range**: 24 MHz to 1.76 GHz (RTL-SDR hardware dependent)
 - **Tunable Parameters**: Frequency, gain, mode, and volume controls
 - **Low Latency**: Optimized for real-time audio performance
-- **Cross-Platform**: Windows and macOS support
+
+### Professional Visualizations
+- **FFT Spectrum Analyzer**: Real-time 1024-point FFT frequency display with smoothing
+- **Waterfall Display**: Time-domain spectrum visualization with color-mapped signal intensity
+- **S-Meter**: Professional signal strength meter showing dBm and S-units
+- **Modern Dark Theme**: 800x700 UI with visualization panel optimized for studio use
+
+### Preset Management
+- **Save/Load Presets**: Store favorite stations with frequency, gain, and mode settings
+- **Default Preset Library**: 
+  - FM radio stations
+  - Aviation frequencies (tower, ground, approach, ATIS)
+  - NOAA weather radio channels
+  - Amateur radio calling frequencies (2M, 70cm)
+  - Shortwave time stations (WWV)
 
 ## 🏗️ Architecture
 
-This plugin implements a complete SDR-to-DAW pipeline:
+This plugin implements a complete SDR-to-DAW pipeline with real-time visualization:
 
 ```
 RTL-SDR Hardware
     ↓ (USB)
 IQ Sample Stream (uint8, 1.024 MSPS)
+    ├→ (Visualization: FFT + Waterfall + S-Meter)
     ↓ (Thread-safe ring buffer)
 FM Demodulator (Polar discriminator)
     ↓ (De-emphasis filter)
@@ -47,6 +63,26 @@ VST3 Audio Output → Ableton Live
    - High-quality sample rate conversion
    - Lagrange interpolation
    - Pattern from: JUCE interpolators, SDR++ resampling
+
+4. **SpectrumAnalyzer** (`SpectrumAnalyzer.cpp`)
+   - 1024-point FFT with Hann windowing
+   - Smoothed magnitude display in dB
+   - Real-time frequency grid and labels
+
+5. **WaterfallDisplay** (`WaterfallDisplay.cpp`)
+   - 200-line history buffer
+   - HSV color mapping for signal intensity
+   - Blue (weak) → Green → Yellow → Red (strong)
+
+6. **SignalMeter** (`SignalMeter.cpp`)
+   - RMS power calculation from IQ samples
+   - S-unit conversion (S0-S9 + dB over S9)
+   - Color-coded meter bar
+
+7. **PresetManager** (`PresetManager.cpp`)
+   - XML-based preset storage
+   - Default preset library with 17+ stations
+   - Add/remove/update preset functionality
 
 4. **RingBuffer** (`RingBuffer.h`)
    - Lock-free circular buffer
