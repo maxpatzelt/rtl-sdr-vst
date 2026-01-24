@@ -21,7 +21,7 @@ A professional-grade VST3 plugin that bridges RTL-SDR USB radio dongles to Ablet
 
 ### Preset Management
 - **Save/Load Presets**: Store favorite stations with frequency, gain, and mode settings
-- **Default Preset Library**: 
+- **Default Preset Library**:
   - FM radio stations
   - Aviation frequencies (tower, ground, approach, ATIS)
   - NOAA weather radio channels
