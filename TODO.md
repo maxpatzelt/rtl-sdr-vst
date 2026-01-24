@@ -213,8 +213,8 @@
 
 ---
 
-**Current Version**: 2.0.0  
-**Last Updated**: January 24, 2026  
+**Current Version**: 2.0.0
+**Last Updated**: January 24, 2026
 **Status**: ✅ Phase 1 complete - Spectrum, Waterfall, S-Meter, Presets all working!
 
 ## 📝 Notes

@@ -166,7 +166,7 @@ void RTLSDRPluginProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce:
         // Demodulate based on mode
         tempAudioBuffer.clear();
         int mode = currentMode.load();
-        
+
         if (mode == 2)  // AM mode
         {
             amDemod.processBlock(tempIQBuffer.data(), (int)toRead, tempAudioBuffer);
