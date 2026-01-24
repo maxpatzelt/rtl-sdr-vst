@@ -53,6 +53,9 @@ public:
 
     std::vector<RTLSDRDevice::DeviceInfo> getAvailableDevices();
 
+    // Expose IQ buffer for visualization
+    RingBuffer<uint8_t>& getIQBuffer() { return iqBuffer; }
+
     // Parameters (using smart pointers for proper ownership)
     juce::AudioParameterFloat* frequencyParam = nullptr;
     juce::AudioParameterFloat* gainParam = nullptr;

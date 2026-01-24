@@ -1,5 +1,6 @@
 /*
   RTL-SDR Plugin Editor Implementation
+  Modern UI with spectrum analyzer, waterfall, and preset management
 */
 
 #include "PluginProcessor.h"
@@ -8,7 +9,12 @@
 RTLSDRPluginEditor::RTLSDRPluginEditor(RTLSDRPluginProcessor& p)
     : AudioProcessorEditor(&p), audioProcessor(p)
 {
-    setSize(600, 500);
+    setSize(800, 700);
+
+    // Add visualization components
+    addAndMakeVisible(spectrumAnalyzer);
+    addAndMakeVisible(waterfallDisplay);
+    addAndMakeVisible(signalMeter);
 
     // Title
     titleLabel.setText("RTL-SDR Radio", juce::dontSendNotification);
@@ -32,7 +38,11 @@ RTLSDRPluginEditor::RTLSDRPluginEditor(RTLSDRPluginProcessor& p)
     frequencySlider.setNumDecimalPlacesToDisplay(3);
     frequencySlider.onValueChange = [this]() {
         if (audioProcessor.frequencyParam)
+        {
             audioProcessor.frequencyParam->setValueNotifyingHost(frequencySlider.getValue() / 1766.0f);
+            spectrumAnalyzer.setCenterFrequency(frequencySlider.getValue() * 1e6);
+            waterfallDisplay.setCenterFrequency(frequencySlider.getValue() * 1e6);
+        }
     };
     addAndMakeVisible(frequencySlider);
 
@@ -122,8 +132,26 @@ RTLSDRPluginEditor::RTLSDRPluginEditor(RTLSDRPluginProcessor& p)
     };
     addAndMakeVisible(stopButton);
 
-    // Update device list
+    // Preset UI
+    presetCombo.setTextWhenNothingSelected("Select Preset");
+    presetCombo.onChange = [this]() {
+        int selectedId = presetCombo.getSelectedId();
+        if (selectedId > 0)
+            loadPreset(selectedId - 1);
+    };
+    addAndMakeVisible(presetCombo);
+
+    savePresetButton.setButtonText("Save Preset");
+    savePresetButton.onClick = [this]() { saveCurrentAsPreset(); };
+    addAndMakeVisible(savePresetButton);
+
+    deletePresetButton.setButtonText("Delete");
+    deletePresetButton.onClick = [this]() { deleteCurrentPreset(); };
+    addAndMakeVisible(deletePresetButton);
+
+    // Update device and preset lists
     updateDeviceList();
+    updatePresetList();
 
     // Start timer for status updates
     startTimer(100);
@@ -136,27 +164,45 @@ RTLSDRPluginEditor::~RTLSDRPluginEditor()
 
 void RTLSDRPluginEditor::paint(juce::Graphics& g)
 {
-    g.fillAll(getLookAndFeel().findColour(juce::ResizableWindow::backgroundColourId));
+    // Modern dark theme
+    g.fillAll(juce::Colour(0xFF1a1a1a));
 
-    // Draw RF spectrum visualization placeholder
-    g.setColour(juce::Colours::darkgrey);
-    g.fillRect(20, 360, 560, 120);
-
-    g.setColour(juce::Colours::lightblue);
-    g.drawText("RF Spectrum (Placeholder)", 20, 360, 560, 30, juce::Justification::centred);
+    // Background panels
+    g.setColour(juce::Colour(0xFF2a2a2a));
+    g.fillRoundedRectangle(10, 50, getWidth() - 20, 280, 5.0f);  // Visualization panel
+    g.fillRoundedRectangle(10, 340, getWidth() - 20, 350, 5.0f);  // Controls panel
 }
 
 void RTLSDRPluginEditor::resized()
 {
-    auto bounds = getLocalBounds().reduced(20);
+    auto bounds = getLocalBounds().reduced(15);
 
-    // Title and status
-    titleLabel.setBounds(bounds.removeFromTop(40));
-    statusLabel.setBounds(bounds.removeFromTop(30));
+    // Title
+    titleLabel.setBounds(bounds.removeFromTop(35));
 
     bounds.removeFromTop(10);
 
-    // Device selection
+    // Spectrum analyzer (top third)
+    spectrumAnalyzer.setBounds(bounds.removeFromTop(120).reduced(5));
+
+    bounds.removeFromTop(5);
+
+    // Waterfall display (middle third)
+    waterfallDisplay.setBounds(bounds.removeFromTop(120).reduced(5));
+
+    bounds.removeFromTop(10);
+
+    // Signal meter
+    signalMeter.setBounds(bounds.removeFromTop(30).reduced(5));
+
+    bounds.removeFromTop(15);
+
+    // Status
+    statusLabel.setBounds(bounds.removeFromTop(25));
+
+    bounds.removeFromTop(10);
+
+    // Device selection row
     auto deviceRow = bounds.removeFromTop(30);
     deviceCombo.setBounds(deviceRow.removeFromLeft(300));
     deviceRow.removeFromLeft(10);
@@ -164,26 +210,37 @@ void RTLSDRPluginEditor::resized()
     deviceRow.removeFromLeft(10);
     stopButton.setBounds(deviceRow.removeFromLeft(100));
 
-    bounds.removeFromTop(20);
+    bounds.removeFromTop(15);
+
+    // Preset row
+    auto presetRow = bounds.removeFromTop(30);
+    juce::Label* presetLabel = new juce::Label();
+    presetLabel->setText("Presets:", juce::dontSendNotification);
+    presetLabel->setBounds(presetRow.removeFromLeft(80));
+    addAndMakeVisible(presetLabel);
+    presetCombo.setBounds(presetRow.removeFromLeft(250));
+    presetRow.removeFromLeft(10);
+    savePresetButton.setBounds(presetRow.removeFromLeft(100));
+    presetRow.removeFromLeft(10);
+    deletePresetButton.setBounds(presetRow.removeFromLeft(80));
+
+    bounds.removeFromTop(15);
 
     // Frequency
-    auto freqLabelRow = bounds.removeFromTop(25);
-    frequencyLabel.setBounds(freqLabelRow);
+    frequencyLabel.setBounds(bounds.removeFromTop(20));
+    frequencySlider.setBounds(bounds.removeFromTop(30));
 
-    auto freqRow = bounds.removeFromTop(30);
-    frequencySlider.setBounds(freqRow);
-
-    auto presetRow = bounds.removeFromTop(30);
-    frequencyPreset1.setBounds(presetRow.removeFromLeft(180));
-    presetRow.removeFromLeft(5);
-    frequencyPreset2.setBounds(presetRow.removeFromLeft(180));
-    presetRow.removeFromLeft(5);
-    frequencyPreset3.setBounds(presetRow.removeFromLeft(180));
+    auto presetBtnRow = bounds.removeFromTop(30);
+    frequencyPreset1.setBounds(presetBtnRow.removeFromLeft(180));
+    presetBtnRow.removeFromLeft(5);
+    frequencyPreset2.setBounds(presetBtnRow.removeFromLeft(180));
+    presetBtnRow.removeFromLeft(5);
+    frequencyPreset3.setBounds(presetBtnRow.removeFromLeft(180));
 
     bounds.removeFromTop(15);
 
     // Gain
-    gainLabel.setBounds(bounds.removeFromTop(25));
+    gainLabel.setBounds(bounds.removeFromTop(20));
     gainSlider.setBounds(bounds.removeFromTop(30));
 
     bounds.removeFromTop(15);
@@ -196,13 +253,30 @@ void RTLSDRPluginEditor::resized()
     bounds.removeFromTop(15);
 
     // Volume
-    volumeLabel.setBounds(bounds.removeFromTop(25));
+    volumeLabel.setBounds(bounds.removeFromTop(20));
     volumeSlider.setBounds(bounds.removeFromTop(30));
 }
 
 void RTLSDRPluginEditor::timerCallback()
 {
     updateStatus();
+
+    // Feed data to visualizers if SDR is running
+    if (audioProcessor.isSDRRunning())
+    {
+        // Get IQ samples from the processor's ring buffer
+        auto& iqBuffer = audioProcessor.getIQBuffer();
+        const int samplesToRead = 2048;
+        uint8_t buffer[samplesToRead];
+
+        int samplesRead = iqBuffer.read(buffer, samplesToRead);
+        if (samplesRead > 0)
+        {
+            spectrumAnalyzer.pushSamples(buffer, samplesRead);
+            waterfallDisplay.pushSamples(buffer, samplesRead);
+            signalMeter.updateSignal(buffer, samplesRead);
+        }
+    }
 }
 
 void RTLSDRPluginEditor::updateDeviceList()
@@ -231,13 +305,89 @@ void RTLSDRPluginEditor::updateStatus()
     if (audioProcessor.isSDRRunning())
     {
         // Update frequency display
-        float freq = audioProcessor.frequencyParam->get();
-        frequencySlider.setValue(freq, juce::dontSendNotification);
+        if (audioProcessor.frequencyParam)
+        {
+            float freq = audioProcessor.frequencyParam->get();
+            frequencySlider.setValue(freq, juce::dontSendNotification);
+        }
 
         // Update gain
-        gainSlider.setValue(audioProcessor.gainParam->get(), juce::dontSendNotification);
+        if (audioProcessor.gainParam)
+            gainSlider.setValue(audioProcessor.gainParam->get(), juce::dontSendNotification);
 
         // Update volume
-        volumeSlider.setValue(audioProcessor.volumeParam->get(), juce::dontSendNotification);
+        if (audioProcessor.volumeParam)
+            volumeSlider.setValue(audioProcessor.volumeParam->get(), juce::dontSendNotification);
+    }
+}
+
+void RTLSDRPluginEditor::updatePresetList()
+{
+    presetCombo.clear();
+
+    const auto& presets = presetManager.getPresets();
+    for (int i = 0; i < presetManager.getNumPresets(); ++i)
+    {
+        presetCombo.addItem(presets[i].name, i + 1);
+    }
+}
+
+void RTLSDRPluginEditor::loadPreset(int index)
+{
+    if (index < 0 || index >= presetManager.getNumPresets())
+        return;
+
+    const auto& preset = presetManager.getPreset(index);
+
+    // Apply preset settings
+    frequencySlider.setValue(preset.frequency);
+    gainSlider.setValue(preset.gain);
+
+    // Set mode
+    if (preset.mode == "FM")
+        modeCombo.setSelectedId(1);
+    else if (preset.mode == "AM")
+        modeCombo.setSelectedId(3);
+}
+
+void RTLSDRPluginEditor::saveCurrentAsPreset()
+{
+    // Use async alert window instead of deprecated runModalLoop
+    juce::AlertWindow::showAsync(
+        juce::MessageBoxOptions()
+            .withIconType(juce::MessageBoxIconType::QuestionIcon)
+            .withTitle("Save Preset")
+            .withMessage("Enter preset name:")
+            .withButton("OK")
+            .withButton("Cancel"),
+        [this](int result)
+        {
+            if (result == 1)  // OK button
+            {
+                // For simplicity, use a default name for now
+                // In a real app, you'd use a proper input dialog
+                RadioPreset preset;
+                preset.name = "Preset " + juce::String(presetManager.getNumPresets() + 1);
+                preset.frequency = frequencySlider.getValue();
+                preset.gain = (float)gainSlider.getValue();
+
+                int modeId = modeCombo.getSelectedId();
+                preset.mode = (modeId == 3) ? "AM" : "FM";
+
+                presetManager.addPreset(preset);
+                updatePresetList();
+            }
+        }
+    );
+}
+
+void RTLSDRPluginEditor::deleteCurrentPreset()
+{
+    int selectedId = presetCombo.getSelectedId();
+    if (selectedId > 0)
+    {
+        presetManager.removePreset(selectedId - 1);
+        updatePresetList();
+        presetCombo.setSelectedId(0);
     }
 }

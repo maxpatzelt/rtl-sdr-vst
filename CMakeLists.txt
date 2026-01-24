@@ -60,6 +60,10 @@ target_sources(RTLSDRPlugin
         Source/FMDemodulator.cpp
         Source/AudioResampler.cpp
         Source/RingBuffer.cpp
+        Source/SpectrumAnalyzer.cpp
+        Source/WaterfallDisplay.cpp
+        Source/SignalMeter.cpp
+        Source/PresetManager.cpp
 )
 
 target_compile_definitions(RTLSDRPlugin

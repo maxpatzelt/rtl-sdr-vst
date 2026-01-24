@@ -1,12 +1,16 @@
 /*
   RTL-SDR Plugin Editor (GUI)
-  Simple but functional interface for RF tuning
+  Professional SDR interface with spectrum analyzer, waterfall, and presets
 */
 
 #pragma once
 #include <juce_audio_processors/juce_audio_processors.h>
 #include <juce_gui_basics/juce_gui_basics.h>
 #include "PluginProcessor.h"
+#include "SpectrumAnalyzer.h"
+#include "WaterfallDisplay.h"
+#include "SignalMeter.h"
+#include "PresetManager.h"
 
 class RTLSDRPluginEditor : public juce::AudioProcessorEditor,
                            public juce::Timer
@@ -22,6 +26,14 @@ public:
 
 private:
     RTLSDRPluginProcessor& audioProcessor;
+
+    // Visualization components
+    SpectrumAnalyzer spectrumAnalyzer;
+    WaterfallDisplay waterfallDisplay;
+    SignalMeter signalMeter;
+
+    // Preset management
+    PresetManager presetManager;
 
     // UI Components
     juce::Label titleLabel;
@@ -44,6 +56,11 @@ private:
     juce::TextButton startButton;
     juce::TextButton stopButton;
 
+    // Preset UI
+    juce::ComboBox presetCombo;
+    juce::TextButton savePresetButton;
+    juce::TextButton deletePresetButton;
+
     // Parameter attachments
     std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> frequencyAttachment;
     std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> gainAttachment;
@@ -52,6 +69,10 @@ private:
 
     void updateDeviceList();
     void updateStatus();
+    void updatePresetList();
+    void loadPreset(int index);
+    void saveCurrentAsPreset();
+    void deleteCurrentPreset();
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(RTLSDRPluginEditor)
 };
