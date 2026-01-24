@@ -23,7 +23,7 @@ RTLSDRPluginProcessor::RTLSDRPluginProcessor()
 
     addParameter(modeParam = new juce::AudioParameterChoice(
         juce::ParameterID{"mode", 1}, "Mode",
-        juce::StringArray{"FM (Wideband)", "FM (Narrowband)", "AM"},
+        juce::StringArray{"FM (Wideband)", "FM (Narrowband)", "AM", "USB", "LSB"},
         0));
 
     addParameter(volumeParam = new juce::AudioParameterFloat(
@@ -170,6 +170,16 @@ void RTLSDRPluginProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce:
         if (mode == 2)  // AM mode
         {
             amDemod.processBlock(tempIQBuffer.data(), (int)toRead, tempAudioBuffer);
+        }
+        else if (mode == 3)  // USB mode
+        {
+            ssbDemod.setMode(SSBDemodulator::USB);
+            ssbDemod.processBlock(tempIQBuffer.data(), (int)toRead, tempAudioBuffer);
+        }
+        else if (mode == 4)  // LSB mode
+        {
+            ssbDemod.setMode(SSBDemodulator::LSB);
+            ssbDemod.processBlock(tempIQBuffer.data(), (int)toRead, tempAudioBuffer);
         }
         else  // FM modes (0 = Wideband, 1 = Narrowband)
         {

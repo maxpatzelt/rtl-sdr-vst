@@ -12,6 +12,7 @@
 #include "RTLSDRDevice.h"
 #include "FMDemodulator.h"
 #include "AMDemodulator.h"
+#include "SSBDemodulator.h"
 #include "AudioResampler.h"
 #include "RingBuffer.h"
 
@@ -68,6 +69,7 @@ private:
     RTLSDRDevice sdrDevice;
     FMDemodulator fmDemod;
     AMDemodulator amDemod;
+    SSBDemodulator ssbDemod;
     AudioResampler resampler;
     RingBuffer<uint8_t> iqBuffer;    // IQ samples from SDR
     RingBuffer<float> audioBuffer;    // Demodulated audio
@@ -76,7 +78,7 @@ private:
     std::atomic<float> currentFrequency{100.0f}; // MHz
     std::atomic<float> currentGain{29.0f};       // dB
     std::atomic<float> currentVolume{0.7f};
-    std::atomic<int> currentMode{0};             // 0=FM WB, 1=FM NB, 2=AM
+    std::atomic<int> currentMode{0};             // 0=FM WB, 1=FM NB, 2=AM, 3=USB, 4=LSB
 
     // Audio state
     double hostSampleRate = 48000.0;

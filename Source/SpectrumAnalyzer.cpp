@@ -168,3 +168,24 @@ void SpectrumAnalyzer::resized()
 {
     // Nothing to resize
 }
+
+void SpectrumAnalyzer::mouseDown(const juce::MouseEvent& event)
+{
+    if (!onFrequencyClicked)
+        return;
+
+    auto bounds = getLocalBounds();
+    float clickX = (float)event.getPosition().getX();
+    float relativeX = clickX / bounds.getWidth();
+
+    // Convert pixel position to frequency
+    // relativeX: 0.0 = left edge, 0.5 = center, 1.0 = right edge
+    double span = sampleRate / 1e6;  // MHz
+    double clickedFreq = centerFrequency + (relativeX - 0.5) * span;
+
+    // Clamp to valid range
+    clickedFreq = juce::jlimit(24.0, 1766.0, clickedFreq);
+
+    // Notify callback
+    onFrequencyClicked(clickedFreq);
+}

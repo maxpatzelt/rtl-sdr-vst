@@ -23,6 +23,8 @@ public:
     void resized() override;
     void timerCallback() override;
 
+    void mouseDown(const juce::MouseEvent& event) override;
+
     // Push IQ samples for FFT analysis
     void pushSamples(const uint8_t* iqData, int numSamples);
 
@@ -31,6 +33,9 @@ public:
 
     // Set sample rate
     void setSampleRate(double sr) { sampleRate = sr; }
+
+    // Set callback for frequency changes (click-to-tune)
+    std::function<void(double)> onFrequencyClicked;
 
 private:
     juce::dsp::FFT fft;

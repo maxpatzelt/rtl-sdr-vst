@@ -80,10 +80,12 @@ RTLSDRPluginEditor::RTLSDRPluginEditor(RTLSDRPluginProcessor& p)
     modeCombo.addItem("FM (Wideband)", 1);
     modeCombo.addItem("FM (Narrowband)", 2);
     modeCombo.addItem("AM", 3);
+    modeCombo.addItem("USB", 4);
+    modeCombo.addItem("LSB", 5);
     modeCombo.setSelectedId(1);
     modeCombo.onChange = [this]() {
         if (audioProcessor.modeParam)
-            audioProcessor.modeParam->setValueNotifyingHost((float)(modeCombo.getSelectedId() - 1) / 2.0f);
+            audioProcessor.modeParam->setValueNotifyingHost((float)(modeCombo.getSelectedId() - 1) / 4.0f);
     };
     addAndMakeVisible(modeCombo);
 
@@ -148,6 +150,25 @@ RTLSDRPluginEditor::RTLSDRPluginEditor(RTLSDRPluginProcessor& p)
     deletePresetButton.setButtonText("Delete");
     deletePresetButton.onClick = [this]() { deleteCurrentPreset(); };
     addAndMakeVisible(deletePresetButton);
+
+    // History combo box
+    historyCombo.setTextWhenNothingSelected("Recent Frequencies");
+    historyCombo.onChange = [this]() {
+        int selectedId = historyCombo.getSelectedId();
+        if (selectedId > 0)
+        {
+            auto* entry = frequencyHistory.getEntry(selectedId - 1);
+            if (entry)
+                frequencySlider.setValue(entry->frequency);
+        }
+    };
+    addAndMakeVisible(historyCombo);
+
+    // Setup click-to-tune callback
+    spectrumAnalyzer.onFrequencyClicked = [this](double freq) {
+        frequencySlider.setValue(freq);
+        addToHistory(freq);
+    };
 
     // Update device and preset lists
     updateDeviceList();
@@ -390,4 +411,25 @@ void RTLSDRPluginEditor::deleteCurrentPreset()
         updatePresetList();
         presetCombo.setSelectedId(0);
     }
+}
+
+void RTLSDRPluginEditor::updateHistoryList()
+{
+    historyCombo.clear();
+
+    const auto& history = frequencyHistory.getHistory();
+    int id = 1;
+    for (const auto& entry : history)
+    {
+        juce::String text = juce::String(entry.frequency, 3) + " MHz";
+        if (entry.label.isNotEmpty())
+            text += " - " + entry.label;
+        historyCombo.addItem(text, id++);
+    }
+}
+
+void RTLSDRPluginEditor::addToHistory(double frequency)
+{
+    frequencyHistory.addFrequency(frequency);
+    updateHistoryList();
 }

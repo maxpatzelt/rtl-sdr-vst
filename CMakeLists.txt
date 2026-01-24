@@ -59,12 +59,14 @@ target_sources(RTLSDRPlugin
         Source/RTLSDRDevice.cpp
         Source/FMDemodulator.cpp
         Source/AMDemodulator.cpp
+        Source/SSBDemodulator.cpp
         Source/AudioResampler.cpp
         Source/RingBuffer.cpp
         Source/SpectrumAnalyzer.cpp
         Source/WaterfallDisplay.cpp
         Source/SignalMeter.cpp
         Source/PresetManager.cpp
+        Source/FrequencyHistory.cpp
 )
 
 target_compile_definitions(RTLSDRPlugin

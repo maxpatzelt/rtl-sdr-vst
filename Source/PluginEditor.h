@@ -11,6 +11,7 @@
 #include "WaterfallDisplay.h"
 #include "SignalMeter.h"
 #include "PresetManager.h"
+#include "FrequencyHistory.h"
 
 class RTLSDRPluginEditor : public juce::AudioProcessorEditor,
                            public juce::Timer
@@ -34,6 +35,10 @@ private:
 
     // Preset management
     PresetManager presetManager;
+
+    // Frequency history
+    FrequencyHistory frequencyHistory;
+    juce::ComboBox historyCombo;
 
     // UI Components
     juce::Label titleLabel;
@@ -73,6 +78,8 @@ private:
     void loadPreset(int index);
     void saveCurrentAsPreset();
     void deleteCurrentPreset();
+    void updateHistoryList();
+    void addToHistory(double frequency);
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(RTLSDRPluginEditor)
 };
