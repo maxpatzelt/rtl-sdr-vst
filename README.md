@@ -118,7 +118,7 @@ VST3 Audio Output → Ableton Live
 ### 1. Clone and Setup
 
 ```bash
-git clone <your-repo-url> RTL-SDR-VST
+git clone https://github.com/maxpatzelt/rtl-sdr-vst3 RTL-SDR-VST
 cd RTL-SDR-VST
 
 # Clone JUCE as a submodule
@@ -262,20 +262,22 @@ No code was copied verbatim—only architectural patterns, DSP algorithms, and b
 
 ## 🚀 Future Enhancements
 
-Potential features for future development:
-
-- [ ] AM/SSB/CW demodulation modes
-- [ ] Spectrum analyzer visualization
-- [ ] Waterfall display
 - [ ] Automatic gain control (AGC)
-- [ ] Frequency scanning
-- [ ] Recording to file
-- [ ] Multiple SDR device support
+- [ ] Click-to-tune in spectrum display
+- [ ] Frequency scanning / squelch
+- [ ] Record demodulated audio to WAV
 - [ ] IQ file playback mode
+- [ ] Multiple SDR device support
+- [ ] HackRF / AirSpy hardware support
+- [ ] Stereo FM decoding (L/R pilot separation)
+- [ ] RDS decoder (FM station metadata)
+- [ ] CW / digital modes (PSK31, FT8)
+- [ ] MIDI learn / CC control for all parameters
+- [ ] macOS Universal Binary + AU format
 
 ## 📄 License
 
-This project is open source. Specify your license here (e.g., MIT, GPL, Apache 2.0).
+GPL v2 (required by librtlsdr dependency).
 
 ### Third-Party Licenses
 - **JUCE**: GPL v3 / Commercial (https://juce.com/juce-7-licence/)
@@ -290,6 +292,8 @@ Contributions welcome! Please:
 4. Submit a pull request
 
 ## 📧 Contact
+
+**Maintainer:** Max Patzelt — https://github.com/maxpatzelt/
 
 For questions, issues, or suggestions, please open a GitHub issue.
 

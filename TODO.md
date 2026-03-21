@@ -8,25 +8,16 @@
 - [x] Modern dark theme UI (800x700)
 - [x] Build and deploy to GitHub
 
-## 🚧 Phase 2: Enhanced Demodulation (NEXT)
+## ✅ Phase 2: Enhanced Demodulation (COMPLETED v2.1.0)
+- [x] AM demodulation — envelope detection, DC offset removal (`AMDemodulator.cpp`)
+- [x] SSB demodulation (USB/LSB) — Hilbert transform, fine tuning (`SSBDemodulator.cpp`)
+- [x] Narrow FM support for NOAA weather
 
-### AM Demodulation (HIGH PRIORITY)
-- [ ] Implement envelope detection algorithm
-- [ ] Add AGC (Automatic Gain Control)
-- [ ] DC offset removal
-- [ ] Test with aviation band (118-137 MHz)
-- [ ] Integrate into mode selector UI
-
-### SSB Demodulation (USB/LSB)
-- [ ] Hilbert transform for SSB
-- [ ] Fine frequency tuning (+/- 10 kHz control)
-- [ ] Support for amateur radio SSB
-- [ ] Separate USB/LSB mode buttons
-
-### Narrow FM for NOAA Weather
-- [ ] Optimized demodulator for weather radio
-- [ ] Better clarity on 162 MHz band
+## 🚧 Phase 2b: Demodulation Polish (NEXT)
+- [ ] AGC (Automatic Gain Control) for AM/NFM
+- [ ] Fine frequency tuning UI (+/- 10 kHz control)
 - [ ] Improved squelch for weather channels
+- [ ] Test SSB with amateur radio (14 MHz, 7 MHz)
 
 ## 📊 Phase 3: Advanced Visualization
 
@@ -213,9 +204,10 @@
 
 ---
 
-**Current Version**: 2.0.0
-**Last Updated**: January 24, 2026
-**Status**: ✅ Phase 1 complete - Spectrum, Waterfall, S-Meter, Presets all working!
+**Current Version**: 2.1.0
+**Last Updated**: March 2026
+**Maintainer**: Max Patzelt — https://github.com/maxpatzelt/
+**Status**: ✅ Phase 1 + Phase 2 complete — Spectrum, Waterfall, S-Meter, Presets, AM, SSB all implemented.
 
 ## 📝 Notes
 
