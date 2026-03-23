@@ -1,5 +1,10 @@
 /*
-  Signal Strength Meter Implementation
+  Signal Meter — Vintage S-Meter Style
+  Drawn as a classic ham-radio S-meter face:
+    - Cream/ivory face with engraved scale
+    - S0–S9 scale in black, dB-over-S9 in red zone
+    - Amber illuminated needle with trail shadow
+    - Bakelite-style housing
 */
 
 #include "SignalMeter.h"
@@ -7,7 +12,7 @@
 
 SignalMeter::SignalMeter()
 {
-    startTimerHz(30);  // 30 FPS refresh
+    startTimerHz (30);
 }
 
 SignalMeter::~SignalMeter()
@@ -15,153 +20,167 @@ SignalMeter::~SignalMeter()
     stopTimer();
 }
 
-void SignalMeter::updateSignal(const uint8_t* iqData, int numSamples)
+void SignalMeter::updateSignal (const uint8_t* iqData, int numSamples)
 {
     if (!iqData || numSamples == 0) return;
-
-    float rms = calculateRMS(iqData, numSamples);
-    targetDbm = rmsToDbm(rms);
+    targetDbm = rmsToDbm (calculateRMS (iqData, numSamples));
 }
 
-float SignalMeter::calculateRMS(const uint8_t* iqData, int numSamples)
+float SignalMeter::calculateRMS (const uint8_t* iqData, int numSamples)
 {
-    float sumSquares = 0.0f;
-    int count = 0;
-
+    float sum = 0.0f;
+    int   cnt = 0;
     for (int i = 0; i < numSamples; i += 2)
     {
-        float I = (static_cast<float>(iqData[i]) - 127.5f) / 127.5f;
-        float Q = (static_cast<float>(iqData[i + 1]) - 127.5f) / 127.5f;
-
-        sumSquares += I * I + Q * Q;
-        count++;
+        const float I = (static_cast<float>(iqData[i])     - 127.5f) / 127.5f;
+        const float Q = (static_cast<float>(iqData[i + 1]) - 127.5f) / 127.5f;
+        sum += I * I + Q * Q;
+        ++cnt;
     }
-
-    return count > 0 ? std::sqrt(sumSquares / count) : 0.0f;
+    return cnt > 0 ? std::sqrt (sum / cnt) : 0.0f;
 }
 
-float SignalMeter::rmsToDbm(float rms) const
+float SignalMeter::rmsToDbm (float rms) const
 {
     if (rms < 1e-6f) return minDbm;
-
-    // Convert RMS to dBm (approximate)
-    float db = 20.0f * std::log10(rms);
-    float dbm = db - 20.0f;  // Calibration offset
-
-    return juce::jlimit(minDbm, maxDbm, dbm);
+    return juce::jlimit (minDbm, maxDbm, 20.0f * std::log10 (rms) - 20.0f);
 }
 
-float SignalMeter::dbmToSUnits(float dbm) const
+float SignalMeter::dbmToNorm (float dbm) const
 {
-    // S-meter scale:
-    // S0 = -127 dBm
-    // S1 = -121 dBm
-    // S2 = -115 dBm
-    // ...
-    // S9 = -73 dBm
-    // S9+10 = -63 dBm
-    // S9+20 = -53 dBm
-    // S9+30 = -43 dBm
-
+    // Map: -127 dBm (S0) → 0.0 … -73 dBm (S9) → 0.75 … -43 dBm (S9+30) → 1.0
     if (dbm <= -127.0f) return 0.0f;
-    if (dbm >= -43.0f) return 12.0f;  // S9+30
+    if (dbm <= -73.0f)  return juce::jmap (dbm, -127.0f, -73.0f, 0.0f, 0.75f);
+    if (dbm <= -43.0f)  return juce::jmap (dbm, -73.0f,  -43.0f, 0.75f, 1.0f);
+    return 1.0f;
+}
 
-    if (dbm < -73.0f)
-    {
-        // S0 to S9
-        return juce::jmap(dbm, -127.0f, -73.0f, 0.0f, 9.0f);
-    }
-    else
-    {
-        // S9+ (10dB increments)
-        return 9.0f + juce::jmap(dbm, -73.0f, -43.0f, 0.0f, 3.0f);
-    }
+float SignalMeter::dbmToSUnits (float dbm) const
+{
+    if (dbm <= -127.0f) return 0.0f;
+    if (dbm < -73.0f)   return juce::jmap (dbm, -127.0f, -73.0f, 0.0f, 9.0f);
+    return 9.0f + juce::jmap (dbm, -73.0f, -43.0f, 0.0f, 3.0f);
 }
 
 void SignalMeter::timerCallback()
 {
-    // Smooth the reading
     smoothedDbm = smoothedDbm * smoothingFactor + targetDbm * (1.0f - smoothingFactor);
     repaint();
 }
 
-void SignalMeter::paint(juce::Graphics& g)
+//==============================================================================
+void SignalMeter::paint (juce::Graphics& g)
 {
-    auto bounds = getLocalBounds().reduced(2);
+    auto bounds = getLocalBounds();
+    const float W = (float)bounds.getWidth();
+    const float H = (float)bounds.getHeight();
 
-    // Background
-    g.fillAll(juce::Colour(0xFF1a1a1a));
+    // ── Meter housing (dark bakelite frame) ───────────────────────────────────
+    g.setColour (juce::Colour (0xFF1A1812));
+    g.fillRoundedRectangle (bounds.toFloat(), 3.0f);
+    g.setColour (juce::Colour (0xFF2E2C20));
+    g.drawRoundedRectangle (bounds.toFloat().reduced (0.5f), 3.0f, 1.0f);
 
-    // Border
-    g.setColour(juce::Colour(0xFF3a3a3a));
-    g.drawRect(bounds);
-
-    // S-units scale
-    float sUnits = dbmToSUnits(smoothedDbm);
-
-    // Draw meter bar
-    auto meterBounds = bounds.reduced(4);
-    int meterWidth = (int)(meterBounds.getWidth() * (sUnits / 12.0f));
-
-    // Color gradient based on signal strength
-    juce::Colour meterColor;
-    if (sUnits < 3.0f)
-        meterColor = juce::Colours::red;
-    else if (sUnits < 5.0f)
-        meterColor = juce::Colours::orange;
-    else if (sUnits < 7.0f)
-        meterColor = juce::Colours::yellow;
-    else
-        meterColor = juce::Colours::green;
-
-    g.setColour(meterColor);
-    g.fillRect(meterBounds.getX(), meterBounds.getY(), meterWidth, meterBounds.getHeight());
-
-    // Draw scale markers
-    g.setColour(juce::Colours::white.withAlpha(0.5f));
-    for (int i = 1; i <= 9; ++i)
+    // ── Meter face (ivory/cream) ───────────────────────────────────────────────
+    const auto face = bounds.reduced (3);
     {
-        int x = (int)(meterBounds.getX() + meterBounds.getWidth() * (i / 12.0f));
-        g.drawVerticalLine(x, meterBounds.getY(), meterBounds.getBottom());
+        juce::ColourGradient faceGrad (
+            juce::Colour (0xFFE8E0C0), (float)face.getX(), (float)face.getY(),
+            juce::Colour (0xFFCDC5A5), (float)face.getX(), (float)face.getBottom(),
+            false);
+        g.setGradientFill (faceGrad);
+        g.fillRoundedRectangle (face.toFloat(), 2.0f);
     }
 
-    // S9+ markers
-    for (int i = 10; i <= 12; ++i)
+    // Red zone at the right (S9+)
+    const float s9x = face.getX() + face.getWidth() * 0.75f;
     {
-        int x = (int)(meterBounds.getX() + meterBounds.getWidth() * (i / 12.0f));
-        g.setColour(juce::Colours::red.withAlpha(0.3f));
-        g.drawVerticalLine(x, meterBounds.getY(), meterBounds.getBottom());
+        juce::ColourGradient redZone (
+            juce::Colour (0x00FF2010), s9x, 0.0f,
+            juce::Colour (0x33FF2010), (float)face.getRight(), 0.0f,
+            false);
+        g.setGradientFill (redZone);
+        g.fillRect (s9x, (float)face.getY(), (float)face.getRight() - s9x, (float)face.getHeight());
     }
 
-    // Text labels
-    g.setColour(juce::Colours::white);
-    g.setFont(10.0f);
+    // ── Scale marks & labels ──────────────────────────────────────────────────
+    // The scale runs from 0 to 1.0 (normalised) = left edge to right edge of face
+    const float labelY  = (float)face.getBottom() - 14.0f;
+    const float tickTop = (float)face.getY() + 5.0f;
 
-    // S-units
-    for (int i = 1; i <= 9; ++i)
+    // S-unit ticks (S1–S9)
+    g.setFont (juce::Font (juce::Font::getDefaultMonospacedFontName(), 8.0f, juce::Font::plain));
+    for (int s = 1; s <= 9; ++s)
     {
-        int x = (int)(meterBounds.getX() + meterBounds.getWidth() * (i / 12.0f));
-        g.drawText(juce::String(i), x - 5, meterBounds.getBottom() + 2, 10, 10, juce::Justification::centred);
+        const float norm = (float)s / 12.0f;  // S1-S9 occupy 0-0.75 of scale
+        const float xPos = face.getX() + face.getWidth() * (norm * 0.75f / 0.75f);
+
+        // Tick mark
+        const bool major = (s % 3 == 0);
+        g.setColour (juce::Colour (0xFF2A2410));
+        g.fillRect (xPos - 0.5f, tickTop, 1.0f, major ? 8.0f : 5.0f);
+
+        // Label for major ticks
+        if (major)
+        {
+            g.setColour (juce::Colour (0xFF1A1408));
+            g.drawText (juce::String (s), (int)xPos - 6, (int)labelY, 12, 11,
+                        juce::Justification::centred);
+        }
     }
 
-    // S9+
-    g.drawText("+20", (int)(meterBounds.getX() + meterBounds.getWidth() * (10.0f / 12.0f)) - 8,
-               meterBounds.getBottom() + 2, 20, 10, juce::Justification::centred);
+    // S9+ marks (+10, +20, +30)
+    const int plusVals[] = { 10, 20, 30 };
+    for (int i = 0; i < 3; ++i)
+    {
+        const float norm = 0.75f + (i + 1) * (0.25f / 3.0f);
+        const float xPos = face.getX() + face.getWidth() * norm;
+        g.setColour (juce::Colour (0xFF8A1010));
+        g.fillRect (xPos - 0.5f, tickTop, 1.0f, 8.0f);
+        g.drawText ("+" + juce::String (plusVals[i]),
+                    (int)xPos - 10, (int)labelY, 20, 11, juce::Justification::centred);
+    }
 
-    // Current reading
+    // "S" label at far left
+    g.setColour (juce::Colour (0xFF1A1408));
+    g.setFont   (juce::Font (juce::Font::getDefaultMonospacedFontName(), 8.5f, juce::Font::bold));
+    g.drawText  ("S", face.getX() + 2, (int)labelY, 10, 11, juce::Justification::left);
+
+    // ── Needle ────────────────────────────────────────────────────────────────
+    const float normPos  = dbmToNorm (smoothedDbm);
+    const float needleX  = face.getX() + face.getWidth() * normPos;
+    const float pivotY   = (float)face.getBottom() + 8.0f;  // pivot below face
+    const float needleTip = (float)face.getY() + 6.0f;
+
+    // Needle shadow
+    g.setColour (juce::Colour (0x30000000));
+    g.drawLine  (needleX + 1.5f, pivotY, needleX + 1.5f, needleTip, 1.5f);
+
+    // Needle body — amber
+    g.setColour (juce::Colour (0xFFD07800));
+    g.drawLine  (needleX, pivotY, needleX, needleTip + 4.0f, 2.0f);
+
+    // Needle tip — brighter amber
+    g.setColour (juce::Colour (0xFFFFB300));
+    g.drawLine  (needleX, needleTip + 4.0f, needleX, needleTip, 1.5f);
+
+    // Pivot screw
+    g.setColour (juce::Colour (0xFF5A5040));
+    g.fillEllipse (needleX - 3.5f, pivotY - 3.5f, 7.0f, 7.0f);
+
+    // ── Reading text ──────────────────────────────────────────────────────────
+    const float sUnits = dbmToSUnits (smoothedDbm);
     juce::String reading;
-    if (sUnits < 9.0f)
-        reading = "S" + juce::String((int)sUnits);
+    if (sUnits < 9.1f)
+        reading = "S" + juce::String ((int)sUnits) + "  (" + juce::String (smoothedDbm, 0) + " dBm)";
     else
-        reading = "S9+" + juce::String((int)((sUnits - 9.0f) * 10.0f));
+        reading = "S9+" + juce::String ((int)((sUnits - 9.0f) * 10.0f))
+                + "  (" + juce::String (smoothedDbm, 0) + " dBm)";
 
-    reading += " (" + juce::String(smoothedDbm, 1) + " dBm)";
-
-    g.setFont(11.0f);
-    g.drawText(reading, bounds.reduced(4), juce::Justification::centredTop);
+    g.setColour (juce::Colour (0xFF3A3020));
+    g.setFont   (juce::Font (juce::Font::getDefaultMonospacedFontName(), 9.0f, juce::Font::bold));
+    g.drawText  (reading, face.getX() + 2, face.getY() + 2,
+                 face.getWidth() - 4, 12, juce::Justification::centred);
 }
 
-void SignalMeter::resized()
-{
-    // Nothing to resize
-}
+void SignalMeter::resized() {}

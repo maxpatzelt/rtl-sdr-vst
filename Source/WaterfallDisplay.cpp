@@ -1,22 +1,27 @@
 /*
-  Waterfall Display Implementation
+  Waterfall Display — Phosphor Green Theme
+  Time-scrolling spectrum history coloured as a phosphor CRT tube:
+    weak signal → deep charcoal-green
+    mid signal  → bright phosphor green
+    hot signal  → amber/gold peak
+  Complements the amber spectrum analyzer above it.
 */
 
 #include "WaterfallDisplay.h"
 #include <cmath>
 
 WaterfallDisplay::WaterfallDisplay()
-    : fft(fftOrder),
-      window(fftSize, juce::dsp::WindowingFunction<float>::hann),
-      history(historyLines)
+    : fft    (fftOrder),
+      window (fftSize, juce::dsp::WindowingFunction<float>::hann),
+      history (historyLines)
 {
-    fftData.fill(0.0f);
+    fftData.fill (0.0f);
     for (auto& line : history)
-        line.fill(-100.0f);
+        line.fill (-100.0f);
 
-    waterfallImage = juce::Image(juce::Image::RGB, fftSize / 2, historyLines, true);
+    waterfallImage = juce::Image (juce::Image::RGB, fftSize / 2, historyLines, true);
 
-    startTimerHz(20);  // 20 FPS refresh
+    startTimerHz (25);
 }
 
 WaterfallDisplay::~WaterfallDisplay()
@@ -24,21 +29,15 @@ WaterfallDisplay::~WaterfallDisplay()
     stopTimer();
 }
 
-void WaterfallDisplay::pushSamples(const uint8_t* iqData, int numSamples)
+void WaterfallDisplay::pushSamples (const uint8_t* iqData, int numSamples)
 {
     if (!iqData || numSamples == 0) return;
 
-    for (int i = 0; i < numSamples && i < fftSize; i += 2)
+    for (int i = 0; i < numSamples && writePosition < fftSize; i += 2)
     {
-        if (writePosition >= fftSize) break;
-
-        float I = iqToFloat(iqData[i]);
-        float Q = iqToFloat(iqData[i + 1]);
-
-        fftData[writePosition * 2] = I;
-        fftData[writePosition * 2 + 1] = Q;
-
-        writePosition++;
+        fftData[writePosition * 2]     = iqToFloat (iqData[i]);
+        fftData[writePosition * 2 + 1] = iqToFloat (iqData[i + 1]);
+        ++writePosition;
     }
 
     if (writePosition >= fftSize)
@@ -48,64 +47,87 @@ void WaterfallDisplay::pushSamples(const uint8_t* iqData, int numSamples)
     }
 }
 
-float WaterfallDisplay::iqToFloat(uint8_t val) const
+float WaterfallDisplay::iqToFloat (uint8_t val) const
 {
     return (static_cast<float>(val) - 127.5f) / 127.5f;
 }
 
 void WaterfallDisplay::performFFT()
 {
-    window.multiplyWithWindowingTable(fftData.data(), fftSize);
-    fft.performFrequencyOnlyForwardTransform(fftData.data());
+    window.multiplyWithWindowingTable (fftData.data(), fftSize);
+    fft.performFrequencyOnlyForwardTransform (fftData.data());
 
-    // Store this line in history
     currentLine = (currentLine + 1) % historyLines;
 
     for (int i = 0; i < fftSize / 2; ++i)
     {
-        float real = fftData[i * 2];
-        float imag = fftData[i * 2 + 1];
-        float magnitude = std::sqrt(real * real + imag * imag);
-
-        float db = magnitude > 0.0f ? 20.0f * std::log10(magnitude) : -100.0f;
-        history[currentLine][i] = juce::jlimit(-100.0f, 0.0f, db);
+        const float mag = std::sqrt (fftData[i * 2] * fftData[i * 2]
+                                    + fftData[i * 2 + 1] * fftData[i * 2 + 1]);
+        const float db  = mag > 0.0f ? 20.0f * std::log10 (mag) : -100.0f;
+        history[currentLine][i] = juce::jlimit (-100.0f, 0.0f, db);
     }
 
     updateWaterfall();
 }
 
+// ── Phosphor green colormap ───────────────────────────────────────────────────
+// 0.0 (silent) → near-black dark green
+// 0.4 (mid)    → bright phosphor green
+// 0.7 (loud)   → yellow-green
+// 1.0 (peak)   → amber/gold
+static juce::Colour phosphorColor (float normalized)
+{
+    normalized = juce::jlimit (0.0f, 1.0f, normalized);
+
+    if (normalized < 0.15f)
+    {
+        // Black → very dark phosphor green
+        const float t = normalized / 0.15f;
+        return juce::Colour::fromRGB (
+            (uint8_t)(t * 4),
+            (uint8_t)(t * 22),
+            (uint8_t)(t * 4));
+    }
+    else if (normalized < 0.5f)
+    {
+        // Dark green → bright phosphor green
+        const float t = (normalized - 0.15f) / 0.35f;
+        return juce::Colour::fromRGB (
+            (uint8_t)(4  + t * 53),
+            (uint8_t)(22 + t * 233),
+            (uint8_t)(4  + t * 16));
+    }
+    else if (normalized < 0.78f)
+    {
+        // Bright green → yellow-green
+        const float t = (normalized - 0.5f) / 0.28f;
+        return juce::Colour::fromRGB (
+            (uint8_t)(57  + t * 198),
+            (uint8_t)(255),
+            (uint8_t)(20  - t * 20));
+    }
+    else
+    {
+        // Yellow-green → amber
+        const float t = (normalized - 0.78f) / 0.22f;
+        return juce::Colour::fromRGB (
+            (uint8_t)(255),
+            (uint8_t)(255 - t * 79),   // 255 → 176 (amber)
+            0);
+    }
+}
+
 void WaterfallDisplay::updateWaterfall()
 {
-    // Update waterfall image
     for (int y = 0; y < historyLines; ++y)
     {
-        int lineIdx = (currentLine - y + historyLines) % historyLines;
+        const int lineIdx = (currentLine - y + historyLines) % historyLines;
 
         for (int x = 0; x < fftSize / 2; ++x)
         {
-            float db = history[lineIdx][x];
-            float normalized = juce::jmap(db, -100.0f, 0.0f, 0.0f, 1.0f);
-
-            // Color mapping: blue (weak) -> green -> yellow -> red (strong)
-            juce::Colour color;
-            if (normalized < 0.25f)
-            {
-                color = juce::Colour::fromHSV(0.67f, juce::jmap(normalized, 0.0f, 0.25f, 0.0f, 1.0f), normalized * 4.0f, 1.0f);
-            }
-            else if (normalized < 0.5f)
-            {
-                color = juce::Colour::fromHSV(0.33f, 1.0f, juce::jmap(normalized, 0.25f, 0.5f, 0.3f, 1.0f), 1.0f);
-            }
-            else if (normalized < 0.75f)
-            {
-                color = juce::Colour::fromHSV(0.16f, 1.0f, juce::jmap(normalized, 0.5f, 0.75f, 0.5f, 1.0f), 1.0f);
-            }
-            else
-            {
-                color = juce::Colour::fromHSV(0.0f, 1.0f, normalized, 1.0f);
-            }
-
-            waterfallImage.setPixelAt(x, y, color);
+            const float db         = history[lineIdx][x];
+            const float normalized = juce::jmap (db, -100.0f, 0.0f, 0.0f, 1.0f);
+            waterfallImage.setPixelAt (x, y, phosphorColor (normalized));
         }
     }
 }
@@ -115,42 +137,41 @@ void WaterfallDisplay::timerCallback()
     repaint();
 }
 
-void WaterfallDisplay::paint(juce::Graphics& g)
+void WaterfallDisplay::paint (juce::Graphics& g)
 {
     auto bounds = getLocalBounds();
+    const float W = (float)bounds.getWidth();
+    const float H = (float)bounds.getHeight();
 
-    // Background
-    g.fillAll(juce::Colour(0xFF0a0a0a));
+    // Waterfall image scaled to component bounds
+    g.drawImage (waterfallImage, bounds.toFloat(),
+                 juce::RectanglePlacement::stretchToFit);
 
-    // Draw waterfall image scaled to component size
-    g.drawImage(waterfallImage, bounds.toFloat());
+    // ── Centre marker ──────────────────────────────────────────────────────────
+    g.setColour (juce::Colour (0xFFFF2020).withAlpha (0.35f));
+    g.drawVerticalLine ((int)(W * 0.5f), 0.0f, H);
 
-    // Overlay grid
-    g.setColour(juce::Colour(0xFF2a2a2a));
-    for (int i = 1; i < 10; ++i)
-    {
-        float x = bounds.getWidth() * i / 10.0f;
-        g.drawVerticalLine((int)x, 0.0f, (float)bounds.getHeight());
-    }
+    // ── Sparse vertical grid lines ─────────────────────────────────────────────
+    g.setColour (juce::Colour (0xFF000000).withAlpha (0.25f));
+    for (int i = 1; i < 8; ++i)
+        g.drawVerticalLine ((int)(W * i / 8.0f), 0.0f, H);
 
-    // Center frequency marker
-    g.setColour(juce::Colours::red.withAlpha(0.3f));
-    float centerX = bounds.getWidth() / 2.0f;
-    g.drawVerticalLine((int)centerX, 0.0f, (float)bounds.getHeight());
+    // ── Frequency labels ──────────────────────────────────────────────────────
+    g.setColour (juce::Colour (0xFFFFB300).withAlpha (0.55f));
+    g.setFont   (juce::Font (juce::Font::getDefaultMonospacedFontName(), 9.0f, juce::Font::plain));
 
-    // Frequency labels
-    g.setColour(juce::Colours::white.withAlpha(0.7f));
-    g.setFont(9.0f);
+    const double span     = sampleRate / 1e6;
+    const double startMHz = centerFrequency - span / 2.0;
+    const double endMHz   = centerFrequency + span / 2.0;
 
-    double span = sampleRate / 1e6;
-    double startFreq = centerFrequency - span / 2.0;
-    double endFreq = centerFrequency + span / 2.0;
+    g.drawText (juce::String (startMHz, 2) + " MHz",
+                3,              2, 64, 11, juce::Justification::left);
+    g.drawText (juce::String (endMHz, 2) + " MHz",
+                (int)W - 66,   2, 64, 11, juce::Justification::right);
 
-    g.drawText(juce::String(startFreq, 2) + " MHz", 2, 2, 60, 12, juce::Justification::left);
-    g.drawText(juce::String(endFreq, 2) + " MHz", bounds.getWidth() - 62, 2, 60, 12, juce::Justification::right);
+    // ── Outer frame ───────────────────────────────────────────────────────────
+    g.setColour (juce::Colour (0xFF1A1812));
+    g.drawRect  (bounds, 1);
 }
 
-void WaterfallDisplay::resized()
-{
-    // Nothing to resize
-}
+void WaterfallDisplay::resized() {}

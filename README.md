@@ -1,302 +1,189 @@
-# RTL-SDR VST3 Plugin for Ableton Live
+# RTL·SDR Radio Receiver — VST3 Plugin
 
-A professional-grade VST3 plugin that bridges RTL-SDR USB radio dongles to Ableton Live, featuring real-time spectrum visualization, waterfall display, and comprehensive preset management for radio frequencies.
+> *Tune the airwaves. Sample the ether. Capture what nobody else is hearing.*
 
-![RTL-SDR Radio Plugin UI](screenshots/plugin-ui.png)
+A professional VST3 plugin that bridges RTL-SDR USB radio dongles directly into your DAW. Designed for experimental producers, sound designers, and anyone who wants to harvest the raw beauty of the electromagnetic spectrum as an audio source.
 
-## 🎯 Features
-
-### Core SDR Features
-- **Real-time RF to Audio**: Stream radio signals directly into Ableton Live
-- **Wideband FM Demodulation**: High-quality FM demodulation with de-emphasis filtering
-- **Frequency Range**: 24 MHz to 1.76 GHz (RTL-SDR hardware dependent)
-- **Tunable Parameters**: Frequency, gain, mode, and volume controls
-- **Low Latency**: Optimized for real-time audio performance
-
-### Professional Visualizations
-- **FFT Spectrum Analyzer**: Real-time 1024-point FFT frequency display with smoothing
-- **Waterfall Display**: Time-domain spectrum visualization with color-mapped signal intensity
-- **S-Meter**: Professional signal strength meter showing dBm and S-units
-- **Modern Dark Theme**: 800x700 UI with visualization panel optimized for studio use
-
-### Preset Management
-- **Save/Load Presets**: Store favorite stations with frequency, gain, and mode settings
-- **Default Preset Library**:
-  - FM radio stations
-  - Aviation frequencies (tower, ground, approach, ATIS)
-  - NOAA weather radio channels
-  - Amateur radio calling frequencies (2M, 70cm)
-  - Shortwave time stations (WWV)
-
-## 🏗️ Architecture
-
-This plugin implements a complete SDR-to-DAW pipeline with real-time visualization:
-
-```
-RTL-SDR Hardware
-    ↓ (USB)
-IQ Sample Stream (uint8, 1.024 MSPS)
-    ├→ (Visualization: FFT + Waterfall + S-Meter)
-    ↓ (Thread-safe ring buffer)
-FM Demodulator (Polar discriminator)
-    ↓ (De-emphasis filter)
-Audio Resampler (1.024 MHz → 48 kHz)
-    ↓ (Ring buffer)
-VST3 Audio Output → Ableton Live
-```
-
-### Component Overview
-
-1. **RTLSDRDevice** (`RTLSDRDevice.cpp`)
-   - Device enumeration and initialization
-   - Frequency tuning and gain control
-   - IQ sample streaming via librtlsdr
-   - Inspired by: librtlsdr examples, rtl_fm_player
-
-2. **FMDemodulator** (`FMDemodulator.cpp`)
-   - Polar discriminator for FM demodulation
-   - Low-pass filtering for channel selection
-   - De-emphasis filter (50μs/75μs)
-   - Based on: rtl_fm, SDRPlusPlus FM demod
-
-3. **AudioResampler** (`AudioResampler.cpp`)
-   - High-quality sample rate conversion
-   - Lagrange interpolation
-   - Pattern from: JUCE interpolators, SDR++ resampling
-
-4. **SpectrumAnalyzer** (`SpectrumAnalyzer.cpp`)
-   - 1024-point FFT with Hann windowing
-   - Smoothed magnitude display in dB
-   - Real-time frequency grid and labels
-
-5. **WaterfallDisplay** (`WaterfallDisplay.cpp`)
-   - 200-line history buffer
-   - HSV color mapping for signal intensity
-   - Blue (weak) → Green → Yellow → Red (strong)
-
-6. **SignalMeter** (`SignalMeter.cpp`)
-   - RMS power calculation from IQ samples
-   - S-unit conversion (S0-S9 + dB over S9)
-   - Color-coded meter bar
-
-7. **PresetManager** (`PresetManager.cpp`)
-   - XML-based preset storage
-   - Default preset library with 17+ stations
-   - Add/remove/update preset functionality
-
-4. **RingBuffer** (`RingBuffer.h`)
-   - Lock-free circular buffer
-   - Thread-safe producer-consumer
-   - Adapted from: SDRPlusPlus ring buffer, JUCE AbstractFifo
-
-5. **PluginProcessor** (`PluginProcessor.cpp`)
-   - VST3 audio processing
-   - Parameter management
-   - Thread coordination
-
-## 🔧 Dependencies
-
-### Required
-
-- **JUCE Framework** (v7.0+): https://github.com/juce-framework/JUCE
-- **CMake** (v3.15+)
-- **C++17 Compiler** (MSVC 2019+, Clang, GCC)
-
-### Platform-Specific
-
-#### Windows
-- Visual Studio 2019 or later
-- RTL-SDR driver: https://github.com/osmocom/rtl-sdr/releases
-- librtlsdr (zadig for driver installation)
-
-#### macOS
-- Xcode 12 or later
-- Homebrew: `brew install librtlsdr cmake`
-
-## 📦 Building
-
-### 1. Clone and Setup
-
-```bash
-git clone https://github.com/maxpatzelt/rtl-sdr-vst3 RTL-SDR-VST
-cd RTL-SDR-VST
-
-# Clone JUCE as a submodule
-git submodule add https://github.com/juce-framework/JUCE.git JUCE
-git submodule update --init --recursive
-```
-
-### 2. Install RTL-SDR Library
-
-#### Windows
-1. Download prebuilt librtlsdr from https://github.com/osmocom/rtl-sdr/releases
-2. Extract to `C:\Program Files\rtl-sdr`
-3. Add to PATH or set `RTLSDR_LIBRARY` and `RTLSDR_INCLUDE_DIR` in CMake
-
-#### macOS
-```bash
-brew install librtlsdr
-```
-
-#### Linux (Ubuntu/Debian)
-```bash
-sudo apt-get install librtlsdr-dev
-```
-
-### 3. Build with CMake
-
-```bash
-mkdir build
-cd build
-
-# Configure
-cmake .. -DCMAKE_BUILD_TYPE=Release
-
-# Build
-cmake --build . --config Release
-
-# The VST3 will be in: build/RTLSDRPlugin_artefacts/Release/VST3/
-```
-
-### 4. Install Plugin
-
-#### Windows
-Copy to: `C:\Program Files\Common Files\VST3\`
-
-#### macOS
-Copy to: `~/Library/Audio/Plug-Ins/VST3/` or `/Library/Audio/Plug-Ins/VST3/`
-
-## 🎵 Usage in Ableton Live
-
-1. **Load the Plugin**
-   - Create an audio track in Ableton Live
-   - Add "RTL-SDR Radio" from the Audio Effects
-   - Or: Use on a MIDI track if generating audio from scratch
-
-2. **Connect RTL-SDR Hardware**
-   - Plug in your RTL-SDR dongle
-   - Select device from dropdown in plugin GUI
-   - Click "Start SDR"
-
-3. **Tune to a Frequency**
-   - Use the frequency slider or preset buttons
-   - FM Radio: 88-108 MHz
-   - Aviation: 118-137 MHz
-   - Weather Radio: 162-163 MHz
-
-4. **Adjust Settings**
-   - **Gain**: Increase for weak signals, decrease if distorted
-   - **Mode**: FM Wideband (default), FM Narrowband, AM
-   - **Volume**: Output level to DAW
-
-5. **Process with Ableton**
-   - Apply audio effects (reverb, delay, distortion)
-   - Record the audio
-   - Use with Max for Live devices
-   - Sample and resample RF signals
-
-## 🔬 Open Source Inspiration
-
-This project draws architectural patterns and DSP techniques from:
-
-- **librtlsdr**: Device control, tuning, sample streaming
-  - https://github.com/osmocom/rtl-sdr
-
-- **rtl_fm / rtl_fm_player**: FM demodulation pipeline
-  - https://github.com/AlbrechtL/rtl_fm_player
-
-- **SDRPlusPlus**: Modular DSP architecture, filters, resampling
-  - https://github.com/AlexandreRouma/SDRPlusPlus
-
-- **rtl-ais**: Signal processing structure
-  - https://github.com/dgiardini/rtl-ais
-
-- **rtl-sdr-scanner-cpp**: C++ device management patterns
-  - https://github.com/shajen/rtl-sdr-scanner-cpp
-
-No code was copied verbatim—only architectural patterns, DSP algorithms, and best practices were adapted.
-
-## 📝 Technical Notes
-
-### Sample Rate
-- RTL-SDR runs at 1.024 MHz (configurable in code)
-- Audio output at host DAW rate (typically 44.1/48 kHz)
-- Resampling uses Lagrange interpolation
-
-### Thread Model
-- **SDR Thread**: Captures IQ samples from hardware
-- **Audio Thread**: Demodulates and outputs to DAW
-- **Ring Buffers**: Thread-safe communication
-
-### Demodulation
-- **FM**: Polar discriminator (phase difference)
-- **De-emphasis**: 75μs filter (US standard)
-- **Bandwidth**: 150 kHz for wideband FM
-
-### Latency
-- Typical latency: 50-100ms (depends on buffer sizes)
-- Configurable via audio buffer settings
-
-## 🐛 Troubleshooting
-
-### No devices found
-- Ensure RTL-SDR dongle is connected
-- Install librtlsdr drivers (zadig on Windows)
-- Check device with: `rtl_test` command
-
-### No audio output
-- Verify "Start SDR" is clicked
-- Check frequency is valid for your region
-- Increase gain if signal is weak
-- Ensure Ableton track is armed/monitoring
-
-### Crackling/distortion
-- Reduce gain
-- Check USB connection quality
-- Close other USB-intensive applications
-
-### Build errors
-- Verify JUCE submodule is initialized
-- Check CMake finds librtlsdr
-- Ensure C++17 compiler is used
-
-## 🚀 Future Enhancements
-
-- [ ] Automatic gain control (AGC)
-- [ ] Click-to-tune in spectrum display
-- [ ] Frequency scanning / squelch
-- [ ] Record demodulated audio to WAV
-- [ ] IQ file playback mode
-- [ ] Multiple SDR device support
-- [ ] HackRF / AirSpy hardware support
-- [ ] Stereo FM decoding (L/R pilot separation)
-- [ ] RDS decoder (FM station metadata)
-- [ ] CW / digital modes (PSK31, FT8)
-- [ ] MIDI learn / CC control for all parameters
-- [ ] macOS Universal Binary + AU format
-
-## 📄 License
-
-GPL v2 (required by librtlsdr dependency).
-
-### Third-Party Licenses
-- **JUCE**: GPL v3 / Commercial (https://juce.com/juce-7-licence/)
-- **librtlsdr**: GPL v2 (https://github.com/osmocom/rtl-sdr)
-
-## 🤝 Contributing
-
-Contributions welcome! Please:
-1. Fork the repository
-2. Create a feature branch
-3. Test thoroughly with real hardware
-4. Submit a pull request
-
-## 📧 Contact
-
-**Maintainer:** Max Patzelt — https://github.com/maxpatzelt/
-
-For questions, issues, or suggestions, please open a GitHub issue.
+The UI is inspired by classic ham radio transceivers — Kenwood TS-830S, Heathkit SB-102, Collins KWM-2A — with a warm amber phosphor VFO display and bakelite-style controls.
 
 ---
 
-**Disclaimer**: Use responsibly and in compliance with local radio regulations. Ensure you have the right to receive and process radio signals in your jurisdiction.
+## Why it sounds interesting
+
+Radio signals carry textures you can't synthesise:
+- AM stations bleeding into each other at night (ionospheric skip propagation)
+- Aviation VHF with clean, clipped speech and instrument tones
+- NOAA Weather Radio — always-on, eerie, atmospheric drone
+- Shortwave — distant voices, data bursts, numbers stations
+- Ham radio sidebands — unprocessed human voice in USB/LSB
+- The noise floor itself — shaped cosmic and thermal noise
+
+Run it through reverb → instant found-sound ambience.
+Pitch-shift it → textures nobody has in a sample pack.
+
+---
+
+## Features
+
+### Signal Capture
+- **Wideband FM** — broadcast radio, 88–108 MHz and beyond
+- **Narrowband FM** — aviation, repeaters, PMR  
+- **AM** — shortwave, MW broadcast, aviation ATC
+- **USB / LSB** — amateur radio, digital modes, utility stations
+- **24 MHz – 1.76 GHz** tuning range (hardware-dependent)
+
+### New in v3.0 — DAW-Friendly Controls
+
+| Control | What it does |
+|---------|-------------|
+| **AGC** | Automatic gain control — levels out fading signals; 5 ms attack / 150 ms release |
+| **Squelch** | Noise gate — silence the carrier hiss between transmissions |
+| **Fine Tune ±25 kHz** | Dial in exactly; essential for USB/LSB voice and digital modes |
+| **Tape Saturation** | Soft tanh waveshaper — warmth and lo-fi character |
+
+### Visualisations
+- **Spectrum Analyzer** — 1024-point FFT with phosphor amber trace; **click any bin to retune instantly**
+- **Waterfall Display** — 200-line scrolling history in phosphor green; spot DX, scan for signals visually
+- **S-Meter** — vintage needle-sweep signal strength display (S0–S9, +10/+20/+30 dBm)
+
+### Band Presets
+One-click tuning: **FM** (98.7 MHz) · **AIR** (121.5 MHz) · **WX** (162.55 MHz) · **HAM** (144.2 MHz) · **HF** (14.3 MHz)
+
+### Preset & History System
+- Save / load named frequency presets (XML-persistent)
+- Frequency history list (last 20 tuned frequencies)
+- 17+ factory presets: FM stations, aviation, NOAA, amateur, shortwave
+
+---
+
+## Signal Chain
+
+```
+RTL-SDR Hardware (USB)
+    ↓ IQ samples @ 1.024 MSPS (uint8)
+SDR Thread → lock-free ring buffer (no blocking)
+    ↓
+Audio Thread (zero heap allocation in processBlock)
+    ├─ FM demod   (polar discriminator + 75 μs de-emphasis)
+    ├─ AM demod   (envelope detection + DC blocking)
+    └─ SSB demod  (Hilbert transform, USB/LSB)
+    ↓
+AGC (asymmetric envelope follower, 5 ms attack / 150 ms release)
+    ↓
+Audio Resampler (Lagrange interpolation, 1.024 MHz → host rate)
+    ↓
+Tape Saturation (unity-gain normalised tanh waveshaper)
+    ↓
+Squelch Gate (50 ms RMS envelope tracker, exponential taper)
+    ↓
+Volume → DAW stereo output
+```
+
+---
+
+## Building
+
+### Requirements
+- JUCE 7+ (git submodule)
+- CMake 3.15+
+- C++17 compiler (MSVC 2019+, Clang 10+, GCC 9+)
+- librtlsdr (optional — builds in simulation mode without it)
+
+### Quick Start
+
+```bash
+# Clone with JUCE submodule
+git clone --recurse-submodules https://github.com/maxpatzelt/rtl-sdr-vst3
+
+# Simulation mode (no hardware required)
+cmake -B build -DBUILD_WITH_RTLSDR=OFF
+cmake --build build --config Release
+
+# With RTL-SDR hardware
+cmake -B build -DBUILD_WITH_RTLSDR=ON
+cmake --build build --config Release
+```
+
+### Install RTL-SDR Driver
+
+**Windows:** Download librtlsdr from [osmocom/rtl-sdr](https://github.com/osmocom/rtl-sdr/releases), run Zadig → WinUSB for your dongle.
+
+**macOS:** `brew install librtlsdr`
+
+**Linux:** `sudo apt install librtlsdr-dev`
+
+---
+
+## Usage in a DAW
+
+1. Load *RTL-SDR Radio* on a Generator / Instrument track
+2. Plug in your RTL-SDR dongle (e.g. RTL-SDR Blog V4)
+3. Select device from dropdown → **▶ ON AIR**
+4. Use **Band** buttons for quick navigation, or **click the spectrum** to retune
+5. Set **Squelch** just above noise floor to gate silence
+6. Enable **AGC** for consistent levels on fading shortwave
+7. Dial in **Saturation** for warmth before recording
+
+### Creative Ideas
+- Record NOAA weather radio → slice into ambient pads
+- Sample aviation VHF during a storm (lightning impulse noise)
+- Feed into a granular synth while sweeping frequency
+- Use as convolution reverb impulse source
+- Automate the frequency parameter for Doppler-style effects
+
+---
+
+## Technical Notes
+
+### Audio Thread Safety
+All processing buffers are pre-allocated in `prepareToPlay()`. `processBlock()` performs **zero heap allocations** on the critical path.
+
+### AGC
+Asymmetric single-pole envelope follower at the SDR sample rate (1.024 MHz). Attack 5 ms (fast — catches sudden strong signals), release 150 ms (slow — no pumping on voice). Target level 0.5 FS.
+
+### Squelch
+Exponential RMS envelope tracker with 50 ms time constant at host rate. Threshold maps 0–1 → squared RMS for natural taper. Gates output and drains audio buffer while squelched.
+
+### Tape Saturation
+`y = tanh(x·drive) / tanh(drive)` where drive = 1 + amount × 8. Unity-gain normalised at all settings. Soft knee, no hard clipping artifacts.
+
+### Denormal Prevention
+All recursive filter state variables include `+= 1e-25f` DC kick.
+
+---
+
+## Open Source Inspiration
+
+Architectural patterns and DSP algorithms drawn from:
+- [librtlsdr](https://github.com/osmocom/rtl-sdr) — device control
+- [rtl_fm / rtl_fm_player](https://github.com/AlbrechtL/rtl_fm_player) — FM demodulation pipeline  
+- [SDRPlusPlus](https://github.com/AlexandreRouma/SDRPlusPlus) — modular DSP, ring buffers
+
+No code copied verbatim — architecture and algorithms only.
+
+---
+
+## Roadmap
+
+- [ ] Stereo FM decoding (L/R pilot tone separation)
+- [ ] RDS decoder (FM station name / PS / RT)
+- [ ] RTL_TCP remote SDR support
+- [ ] IQ file record / playback
+- [ ] MIDI learn for all parameters
+- [ ] HackRF / AirSpy hardware support
+- [ ] macOS Universal Binary + AU format
+- [ ] CW / digital mode decoder (PSK31, FT8 display)
+- [ ] Scanning mode with squelch stop
+
+---
+
+## License
+
+GPL v2 (required by librtlsdr).  
+JUCE: GPL v3 / Commercial — [juce.com/juce-7-licence](https://juce.com/juce-7-licence/)
+
+---
+
+**Author:** Max Patzelt · [github.com/maxpatzelt](https://github.com/maxpatzelt/)  
+**Brand:** AudioRF  
+**Disclaimer:** Receive-only. Use in compliance with local radio regulations.

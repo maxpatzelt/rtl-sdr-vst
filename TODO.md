@@ -1,232 +1,107 @@
-# RTL-SDR VST3 Plugin - Development Roadmap
+# RTL-SDR VST3 — Development Roadmap
 
-## ✅ Phase 1: Professional Visualizations (COMPLETED v2.0.0)
-- [x] Real-time FFT spectrum analyzer (1024-point with smoothing)
-- [x] Waterfall display with color mapping (200-line history)
-- [x] Signal strength meter (S-meter with dBm/S-units)
-- [x] Preset manager with 17+ default stations
-- [x] Modern dark theme UI (800x700)
-- [x] Build and deploy to GitHub
+## ✅ Completed
 
-## ✅ Phase 2: Enhanced Demodulation (COMPLETED v2.1.0)
-- [x] AM demodulation — envelope detection, DC offset removal (`AMDemodulator.cpp`)
-- [x] SSB demodulation (USB/LSB) — Hilbert transform, fine tuning (`SSBDemodulator.cpp`)
-- [x] Narrow FM support for NOAA weather
+### Phase 1: Core Visualizations (v2.0.0)
+- [x] FFT spectrum analyzer (1024-pt, Hann window, 30 FPS)
+- [x] Waterfall display (200-line scrolling, color-mapped)
+- [x] Signal meter (S0–S9+ dBm)
+- [x] Preset manager (17+ factory presets, XML save/load)
+- [x] Click-to-tune in spectrum
 
-## 🚧 Phase 2b: Demodulation Polish (NEXT)
-- [ ] AGC (Automatic Gain Control) for AM/NFM
-- [ ] Fine frequency tuning UI (+/- 10 kHz control)
-- [ ] Improved squelch for weather channels
-- [ ] Test SSB with amateur radio (14 MHz, 7 MHz)
+### Phase 2: Demodulation (v2.1.0)
+- [x] AM demodulation (envelope detection + DC blocking)
+- [x] SSB demodulation (USB/LSB, Hilbert transform)
+- [x] Frequency history (last 20 tuned frequencies)
 
-## 📊 Phase 3: Advanced Visualization
+### Phase 3: Retro UI + DAW Features (v3.0.0)
+- [x] Complete retro ham radio visual overhaul
+  - [x] Bakelite rotary knobs (custom LookAndFeel)
+  - [x] 7-segment amber VFO display
+  - [x] Vintage needle S-meter
+  - [x] Phosphor amber spectrum analyzer
+  - [x] Phosphor green waterfall
+  - [x] Dark olive chassis + steel hardware
+- [x] AGC — asymmetric envelope follower
+- [x] Squelch — RMS envelope gate
+- [x] Tape saturation — tanh waveshaper
+- [x] Fine tune ±25 kHz
+- [x] Band preset buttons (FM / AIR / WX / HAM / HF)
+- [x] Audio thread safety — zero heap alloc in processBlock
 
-### Spectrogram View
-- [ ] Resizable spectrogram display
-- [ ] Time/frequency zoom controls
-- [ ] Screenshot/export capability
-- [ ] Click-to-tune functionality
+---
 
-### Constellation Diagram
-- [ ] I/Q scatter plot for signal quality
-- [ ] Real-time phase/amplitude visualization
-- [ ] Signal quality metrics
-- [ ] Useful for diagnosing issues
+## 🚧 Next Up (Phase 4)
 
-### Audio Spectrum Analyzer
-- [ ] Post-demodulation audio FFT
-- [ ] Separate from RF spectrum
-- [ ] Shows demodulated audio content
-- [ ] Bass/treble visualization
+### Stereo FM
+- [ ] Pilot tone detection (19 kHz)
+- [ ] L+R / L-R subcarrier decoding
+- [ ] Stereo DAW output
 
-## 🎛️ Phase 4: User Experience
+### RDS Decoder
+- [ ] 57 kHz RDS subcarrier extraction
+- [ ] PS (station name) + RT (radio text) display in VFO area
 
-### Frequency Memory
-- [ ] Recently tuned frequencies list
-- [ ] Quick-access history (last 10)
-- [ ] Station identification labels
-- [ ] Persistent across sessions
+### RTL_TCP Remote Support
+- [ ] Connect to rtl_tcp server over network
+- [ ] Allows use without local hardware / on remote machine
 
-### Scanning Mode
-- [ ] Auto-scan frequency ranges
-- [ ] Squelch threshold control
-- [ ] Stop on active signal detection
-- [ ] Scan lists by band
+### IQ File Playback
+- [ ] Load .iq / .raw files and play back through the demod chain
+- [ ] Enables offline processing and demo mode
 
-### Recording Features
-- [ ] Record demodulated audio to WAV
-- [ ] Save IQ data for later analysis
-- [ ] Export presets with recordings
-- [ ] Timestamp recordings
+---
 
-## 🎹 Phase 5: MIDI Integration
-- [ ] Map frequency to MIDI notes/CC
-- [ ] MIDI learn for all parameters
-- [ ] Control preset switching via MIDI
-- [ ] MIDI sync for scanning mode
+## 📋 Backlog
 
-## 🎨 Phase 6: Audio Effects Chain
-- [ ] Built-in reverb/delay effects
-- [ ] Pitch shifting
-- [ ] Granular synthesis from radio signals
-- [ ] Lo-fi/bit-crushing effects
-- [ ] Ring modulation
+### MIDI
+- [ ] MIDI learn for frequency, gain, volume, mode
+- [ ] CC control for scanning
+- [ ] MIDI notes → frequency (VCO-style tuning)
 
-## 🔧 Phase 7: Performance & Polish
-
-### Optimization
-- [ ] Profile demodulation code
-- [ ] GPU acceleration for FFT
-- [ ] Multi-threaded demodulation
-- [ ] SIMD for IQ conversion
-- [ ] Reduce CPU usage (target <5%)
-- [ ] Optimize ring buffer performance
-
-### Hardware Support
-- [ ] Support for HackRF One
-- [ ] AirSpy devices
-- [ ] RTL-SDR Blog v4 features
-- [ ] Bias-T control for LNA
-- [ ] Multiple simultaneous SDRs
+### Hardware
+- [ ] HackRF One support (libhackrf)
+- [ ] AirSpy support (libairspy)
+- [ ] RTL-SDR Blog V4 direct sampling (HF without upconverter)
+- [ ] Bias-T control (power LNA from USB)
 
 ### Cross-Platform
-- [ ] macOS build and testing
-- [ ] Linux VST3 support
-- [ ] ARM64 builds (Apple Silicon)
-- [ ] AAX format (Pro Tools)
-- [ ] AU format (macOS Audio Units)
+- [ ] macOS Universal Binary (arm64 + x86_64)
+- [ ] AU plugin format
+- [ ] Linux AppImage
+- [ ] Code signing (Windows + macOS)
 
-## 📚 Phase 8: Documentation & Community
+### Digital Modes
+- [ ] CW (Morse) decoder + display
+- [ ] PSK31 / RTTY decoder
+- [ ] FT8 decode overlay on waterfall
 
-### User Manual
-- [ ] Getting started guide
-- [ ] Frequency band reference
-- [ ] Troubleshooting section
-- [ ] Legal/compliance guide by country
+### UX Polish
+- [ ] Resizable plugin window
+- [ ] Dark/light theme toggle
+- [ ] Per-band squelch memory
+- [ ] Frequency annotation layer on waterfall
+- [ ] Screenshot / export waterfall image
 
-### Video Tutorials
-- [ ] Basic setup walkthrough
-- [ ] Creative music production examples
-- [ ] Advanced SDR techniques
-- [ ] Example Ableton Live projects
-
-### Community Features
-- [ ] Preset sharing platform
-- [ ] Regional frequency databases
-- [ ] User-contributed station lists
-- [ ] Forum/Discord community
-
-## 🎯 Next Immediate Steps
-
-1. **Test v2.0.0 in Ableton**
-   - Verify spectrum/waterfall/S-meter rendering
-   - Check preset loading functionality
-   - Validate UI layout and responsiveness
-   - Test with simulation mode
-
-2. **Implement AM Demodulation**
-   - Create AMDemodulator.h/cpp
-   - Envelope detection algorithm
-   - Integrate into mode selector
-   - Test with aviation frequencies
-
-3. **Add Click-to-Tune**
-   - Spectrum analyzer click detection
-   - Convert pixel position to frequency
-   - Update frequency parameter
-
-4. **Create Demo Video**
-   - Record plugin in action
-   - Show all visualization features
-   - Upload to GitHub README and YouTube
-
-## 💡 Feature Ideas (Community Wishlist)
-
-- [ ] Direct sampling mode for HF (0-30 MHz)
-- [ ] Custom waterfall color schemes (theme editor)
-- [ ] Signal recording buffer (loop last 30s)
-- [ ] RDS decoder for FM radio station info
-- [ ] Trunked radio support (P25, DMR)
-- [ ] WebSDR remote tuning integration
-- [ ] Stereo FM decoding (L/R separation)
-- [ ] CW (Morse Code) decoder with visual display
-- [ ] Digital modes (PSK31, RTTY, FT8)
-- [ ] Automatic station identification
-- [ ] Remote SDR via network (RTL_TCP)
-
-## 🧪 Code Quality & Testing
-
-### Testing
-- [ ] Unit tests for DSP components
-- [ ] Integration tests for SDR pipeline
-- [ ] CI/CD pipeline (GitHub Actions)
-- [ ] Automated plugin validation (pluginval)
-- [ ] Performance benchmarks
-
-### Code Improvements
-- [ ] Add more inline documentation
-- [ ] Improve error handling throughout
-- [ ] Add comprehensive logging system
-- [ ] Code coverage analysis
-- [ ] Static analysis (clang-tidy)
-
-## 🐛 Known Issues & Fixes
-
-### To Fix
-- [ ] Thread safety audit (race condition check)
-- [ ] Memory leak check (Valgrind/ASAN)
-- [ ] Handle USB disconnect gracefully
-- [ ] Improve startup latency
-- [ ] AGC for weak signals
-
-### To Investigate
-- [ ] GUI responsiveness with multiple instances
-- [ ] Sample rate mismatch edge cases
-- [ ] High CPU on frequency changes
-- [ ] Waterfall performance on slower systems
-
-## 🏗️ Build System Improvements
-
-- [ ] CPack for installer generation
-- [ ] Code signing automation (macOS/Windows)
-- [ ] Debian package creation
-- [ ] Homebrew formula (macOS)
-- [ ] Chocolatey package (Windows)
-- [ ] Standalone application mode
-
-## 📦 Dependencies & Maintenance
-
-- [ ] Keep JUCE framework updated
-- [ ] Monitor librtlsdr updates
-- [ ] Security vulnerability scanning
-- [ ] Test with latest DAW versions
-- [ ] Update documentation on changes
+### Performance
+- [ ] SIMD IQ conversion (AVX2)
+- [ ] Polyphase resampler (better quality than Lagrange)
+- [ ] GPU FFT option (CUDA / Metal)
+- [ ] Profile demodulator CPU usage
 
 ---
 
-**Current Version**: 2.1.0
-**Last Updated**: March 2026
-**Maintainer**: Max Patzelt — https://github.com/maxpatzelt/
-**Status**: ✅ Phase 1 + Phase 2 complete — Spectrum, Waterfall, S-Meter, Presets, AM, SSB all implemented.
+## 🐛 Known Issues
 
-## 📝 Notes
-
-The plugin is now feature-complete for professional SDR visualization! Next priorities are AM demodulation and click-to-tune functionality. The codebase is clean, well-documented, and ready for community contributions.
-
-1. Pick a TODO item
-2. Create an issue discussing your approach
-3. Fork and create a feature branch
-4. Implement with tests
-5. Update documentation
-6. Submit pull request
-
-## Priority Guide
-
-- **High**: Core functionality, stability, performance
-- **Medium**: Nice-to-have features, UX improvements
-- **Low**: Advanced features, experimental ideas
+- SSB demodulator: minor Hilbert transform ringing on sharp transients
+- Frequency history: not persisted across DAW sessions (only runtime)
+- No graceful USB disconnect recovery (requires restart)
+- Windows: ASIO buffer sizes > 2048 may cause underruns at low signal levels
+- processBlock demodulators still do internal push_back — capacity pre-reserved
+  but not technically lock-free; tracked for future refactor
 
 ---
 
-**Last Updated**: January 2026
-**Maintainer**: (Your name here)
+**Current version:** 3.0.0  
+**Last updated:** 2026-03-22  
+**Maintainer:** Max Patzelt — https://github.com/maxpatzelt/
