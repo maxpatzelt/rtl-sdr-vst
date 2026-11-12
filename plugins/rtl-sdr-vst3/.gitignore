@@ -1,0 +1,69 @@
+# .gitignore for RTL-SDR VST3 Plugin
+
+# Build directories
+build/
+cmake-build-*/
+Build/
+Builds/
+
+# IDE specific
+.vscode/
+.vs/
+.idea/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+*.vcxproj.user
+
+# OS specific
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+
+# Compiled files
+*.o
+*.obj
+*.lo
+*.so
+*.dylib
+*.dll
+*.exe
+*.out
+*.app
+*.a
+*.lib
+
+# JUCE specific
+JuceLibraryCode/
+*.jucer~
+
+# Plugin builds
+*.vst3
+*.component
+*.aaxplugin
+
+# Temp files
+*.log
+*.tmp
+*.bak
+*.cache
+
+# Package managers
+node_modules/
+*.egg-info/
+
+# Documentation builds
+docs/_build/
+site/
+
+# Test files
+test_results/
+*.test
+
+# Profiling
+*.prof
+*.gcda
+*.gcno
