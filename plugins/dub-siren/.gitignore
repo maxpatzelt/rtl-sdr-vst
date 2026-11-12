@@ -1,0 +1,54 @@
+# Build directories
+build/
+cmake-build-*/
+out/
+
+# JUCE/IDE generated files
+*.exe
+*.dll
+*.dylib
+*.so
+*.vst3
+*.component
+*.app
+*.dSYM
+Builds/
+JuceLibraryCode/
+
+# Visual Studio
+.vs/
+*.vcxproj.user
+*.suo
+*.sdf
+*.opensdf
+*.VC.db
+*.VC.opendb
+
+# Xcode
+*.xcodeproj
+*.xcworkspace
+!*.xcworkspace/contents.xcworkspacedata
+xcuserdata/
+DerivedData/
+
+# macOS
+.DS_Store
+*.swp
+*~
+
+# JUCE plugin artefacts
+*_artefacts/
+
+# Test outputs
+Testing/
+TestResults/
+
+# IDE specific
+.vscode/
+.idea/
+*.sublime-*
+
+# Temporary files
+*.log
+*.tmp
+*.bak
